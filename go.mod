@@ -1,4 +1,4 @@
-module github.com/chen-anders/tusd-dynamo-locker
+module github.com/wistia/tusd-dynamo-locker
 
 require (
 	cirello.io/dynamolock v1.0.0
