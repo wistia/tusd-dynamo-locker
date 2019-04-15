@@ -47,7 +47,6 @@ import (
 )
 
 const DEFAULT_LEASE_DURATION_MILLISECONDS = int64(60000)
-const LOCK_ACQUIRE_REFRESH_PERIOD_MILLISECONDS = int64(5000)
 
 var (
 	ErrLockNotHeld = errors.New("Lock not held")
@@ -120,7 +119,7 @@ func (locker *DynamoDBLocker) UseIn(composer *tusd.StoreComposer) {
 
 // LockUpload tries to obtain the exclusive lock.
 func (locker *DynamoDBLocker) LockUpload(id string) error {
-	refreshPeriod := time.Duration(LOCK_ACQUIRE_REFRESH_PERIOD_MILLISECONDS) * time.Millisecond
+	refreshPeriod := time.Duration(locker.LeaseDuration / 10) * time.Millisecond
 	lock, err := locker.Client.AcquireLock(id,
 		dynamolock.WithRefreshPeriod(refreshPeriod),
 		dynamolock.WithDeleteLockOnRelease(),
