@@ -36,22 +36,6 @@
       "pinDigests": true
     }
   ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "fileMatch": [
-        "^\\.github/workflows/.+\\.yml$"
-      ],
-      "matchStrings": [
-        "repository: wistia/github-actions[\\s\\S]*?ref: (?<currentDigest>[a-f0-9]{40})"
-      ],
-      "depNameTemplate": "wistia/github-actions",
-      "packageNameTemplate": "https://github.com/wistia/github-actions",
-      "datasourceTemplate": "git-refs",
-      "currentValueTemplate": "main",
-      "versioningTemplate": "loose"
-    }
-  ],
   "prHourlyLimit": 0,
   "pin": {
     "rebaseWhen": "behind-base-branch",
