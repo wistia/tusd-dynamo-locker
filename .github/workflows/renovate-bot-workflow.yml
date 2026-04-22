@@ -33,6 +33,7 @@ jobs:
           INPUT_MOUNT_DOCKER_SOCKET: 'false'
           INPUT_DOCKER_SOCKET_PATH: '/var/run/docker.sock'
           INPUT_DOCKER_VOLUMES: '/tmp:/tmp'
+          LOG_LEVEL: 'debug'
         with:
           script: |
             const path = require('path');
