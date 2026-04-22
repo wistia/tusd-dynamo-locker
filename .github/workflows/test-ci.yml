@@ -16,7 +16,7 @@ jobs:
     name: Go ${{ matrix.go }}
     services:
       dynamodb:
-        image: amazon/dynamodb-local
+        image: amazon/dynamodb-local@sha256:6b954943dc44e9f0898a75e17192280f558550cf7651cf1b6546af9c55975526
         ports:
           - 8000:8000
     steps:
