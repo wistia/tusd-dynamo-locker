@@ -3,22 +3,97 @@ name: Renovate Bot GHA Workflow
 on:
   workflow_dispatch:
   schedule:
-    - cron: '45 18 1 * *'
+    - cron: '54 5 1 * *'
 
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
-
 
 permissions: {}
 
 jobs:
   renovate:
     permissions:
-      contents: read
-      id-token: write
-    uses: wistia/github-actions/.github/workflows/renovate-bot-reusable.yml@76548d8a454fc1f44a6c693f61027028aa1920f5
-    with:
-      aws-role-to-assume: arn:aws:iam::381492019746:role/github-cicd-wistia-renovate-role
-    secrets:
-      RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+      contents: write
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Run Renovate
+        uses: actions/github-script@v7
+        env:
+          RENOVATE_VERSION: '43.87.1'
+          RENOVATE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RENOVATE_REPOSITORIES: '${{ github.repository }}'
+          INPUT_CONFIG_FILE: '.github/renovate.json'
+          INPUT_ENV_REGEX: '^(?:RENOVATE_\w+|LOG_LEVEL|GITHUB_COM_TOKEN|NODE_OPTIONS|NO_COLOR|(?:HTTPS?|NO)_PROXY|(?:https?|no)_proxy)$'
+          INPUT_MOUNT_DOCKER_SOCKET: 'false'
+          INPUT_DOCKER_SOCKET_PATH: '/var/run/docker.sock'
+          INPUT_DOCKER_VOLUMES: '/tmp:/tmp'
+        with:
+          script: |
+            const path = require('path');
+            const fs = require('fs');
+
+            const image = `ghcr.io/renovatebot/renovate:${process.env.RENOVATE_VERSION}`;
+
+            await core.group('Check Renovate version', async () => {
+              const { stdout } = await exec.getExecOutput('docker', ['run', '--rm', image, '--version']);
+              core.notice(stdout.trim(), { title: 'Renovate CLI version' });
+            });
+
+            const dockerArgs = [];
+
+            const MANAGED_ENV_VARS = new Set(['RENOVATE_TOKEN', 'RENOVATE_CONFIG_FILE', 'RENOVATE_VERSION']);
+            const envRegex = new RegExp(process.env.INPUT_ENV_REGEX);
+            for (const key of Object.keys(process.env)) {
+              if (!MANAGED_ENV_VARS.has(key) && envRegex.test(key)) {
+                dockerArgs.push('--env', key);
+              }
+            }
+
+            const token = process.env.RENOVATE_TOKEN;
+            if (!token) throw new Error("RENOVATE_TOKEN must be provided");
+            core.setSecret(token);
+            dockerArgs.push('--env', `RENOVATE_TOKEN=${token}`);
+
+            const configFile = process.env.INPUT_CONFIG_FILE;
+            if (configFile) {
+              const absPath = path.resolve(configFile);
+              if (!fs.existsSync(absPath) || !fs.statSync(absPath).isFile()) {
+                throw new Error(`configurationFile '${absPath}' must be an existing file`);
+              }
+              const mountPath = `/github-action/${path.basename(absPath)}`;
+              dockerArgs.push(
+                '--env', `RENOVATE_CONFIG_FILE=${mountPath}`,
+                '--volume', `${absPath}:${mountPath}`,
+              );
+            }
+
+            if (process.env.INPUT_MOUNT_DOCKER_SOCKET === 'true') {
+              const sockPath = process.env.INPUT_DOCKER_SOCKET_PATH;
+              if (!fs.existsSync(sockPath) || !fs.statSync(sockPath).isSocket()) {
+                throw new Error(`docker socket host path '${sockPath}' must exist and be a socket`);
+              }
+              const groups = fs.readFileSync('/etc/group', 'utf8');
+              const match = /^docker:x:(?<gid>[1-9]\d*):/m.exec(groups);
+              if (!match?.groups?.gid) {
+                throw new Error('Could not find docker group in /etc/group');
+              }
+              dockerArgs.push(
+                '--volume', `${sockPath}:/var/run/docker.sock`,
+                '--group-add', match.groups.gid,
+              );
+            }
+
+            for (const vol of (process.env.INPUT_DOCKER_VOLUMES || '').split(';').map(v => v.trim()).filter(Boolean)) {
+              dockerArgs.push('--volume', vol);
+            }
+
+            dockerArgs.push('--rm', image);
+
+            const exitCode = await exec.exec('docker', ['run', '-t', ...dockerArgs], { ignoreReturnCode: true });
+            if (exitCode !== 0) {
+              throw new Error(`docker run failed with exit code ${exitCode}`);
+            }
