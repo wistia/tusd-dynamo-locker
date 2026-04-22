@@ -1,9 +1,14 @@
 name: Test
 
-on: [push, pull_request]
+on: [push]
+
+
+permissions: {}
 
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -11,13 +16,15 @@ jobs:
     name: Go ${{ matrix.go }}
     services:
       dynamodb:
-        image: amazon/dynamodb-local
+        image: amazon/dynamodb-local@sha256:6b954943dc44e9f0898a75e17192280f558550cf7651cf1b6546af9c55975526
         ports:
           - 8000:8000
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          persist-credentials: false
       - name: Setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: ${{ matrix.go }}
       - name: Download gomodules
