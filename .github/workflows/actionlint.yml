@@ -1,0 +1,18 @@
+name: GitHub Actions Lint
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/**/**.yml'
+      - '.github/**/**.yaml'
+
+permissions: {}
+
+jobs:
+  actionlint:
+    permissions:
+      contents: read
+    uses: wistia/github-actions/.github/workflows/github-actions-lint-reusable.yml@76548d8a454fc1f44a6c693f61027028aa1920f5 # main

@@ -1,0 +1,21 @@
+name: Renovate Bot GHA Workflow
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 18 1 * *'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    permissions:
+      contents: read
+      id-token: write
+    uses: wistia/github-actions/.github/workflows/renovate-bot-reusable.yml@76548d8a454fc1f44a6c693f61027028aa1920f5
+    with:
+      aws-role-to-assume: arn:aws:iam::381492019746:role/github-cicd-wistia-renovate-role
+    secrets:
+      RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
