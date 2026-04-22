@@ -39,8 +39,8 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "^\\.github/workflows/.+\\.yml$"
+      "managerFilePatterns": [
+        "/^\.github/workflows/.+\.yml$/"
       ],
       "matchStrings": [
         "repository: wistia/github-actions[\\s\\S]*?ref: (?<currentDigest>[a-f0-9]{40})"
