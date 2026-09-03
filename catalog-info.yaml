@@ -1,0 +1,15 @@
+# this is a catalog entity descriptor file for our Backstage instance (https://backstage.wistia.cloud)
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tusd-dynamo-locker
+  description: DynamoDB-based locker for the tusd resumable-upload server
+  annotations:
+    github.com/project-slug: wistia/tusd-dynamo-locker
+  tags:
+    - lang#go
+spec:
+  type: library
+  owner: infrastructure
+  lifecycle: production
